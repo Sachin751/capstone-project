@@ -1,0 +1,52 @@
+- name: Build & Deploy Docker Container
+  hosts: dockerservers
+  gather_facts: false
+  remote_user: root
+  tasks:
+#    - name: Copy the files to remote server
+#      shell: scp -r /var/lib/jenkins/workspace/ansible-jenkins-pipeline/ root@3.96.178.133:~/project/
+
+    - name: Stopping the Container
+      docker_container:
+        name: capstone-container
+        image: capstone:latest
+        state: stopped
+
+    - name: Removing the Container
+      docker_container:
+        name: capstone-container
+        image: capstone:latest
+        state: absent
+
+    - name: Removing Docker Image
+      docker_image:
+        name: capstone:latest
+        state: absent
+
+    - name: Building Docker Image
+      docker_image:
+        name: capstone:latest
+        source: build
+        build:
+          path: ~/project/
+        state: present
+
+    - name: Creating the Container
+      docker_container:
+        name: capstone-container
+        image: capstone:latest
+        ports:
+          - "80:80"
+
+    - name: Log in to Docker Hub
+      docker_login:
+        username: sachinsebastian114
+        password: Sachin@6865
+
+    - name: Tag the Docker image
+      ansible.builtin.shell:
+        cmd: docker tag capstone:latest sachinsebastian114/capstone:latest
+
+    - name: Push the Docker image to Docker Hub
+      ansible.builtin.shell:
+        cmd: docker push sachinsebastian114/capstone:latest
